@@ -1,34 +1,39 @@
-use axum::{
-    extract::{Query, Request},
-    Json,
-    routing::get,
-    Router,
-};
+
 use axum::response::{IntoResponse, Response};
+use axum::{
+    body::{Body, Bytes},
+    extract::{DefaultBodyLimit, Multipart, Query, Request},
+    routing::get,
+    Json, Router,
+};
+use base64::engine::Engine as _;
+use base64::engine::general_purpose::STANDARD as BASE64;
 use rustc_version_runtime::version;
 
 use serde::{Deserialize, Serialize};
 
-
 use tower::util::ServiceExt;
-use tower_http::{
-    services::{ServeFile},
-};
+use tower_http::{limit::RequestBodyLimitLayer, services::ServeFile};
 
 #[tokio::main]
 async fn main() {
     // build our application with a single route
     let app = Router::new()
-        .route_service("/", get(|request: Request| async {
-            let service = ServeFile::new("static/index.html");
-            let result = service.oneshot(request).await;
-            result
-        }).post(|| async { "Hello, World!!" }))
+        .route_service(
+            "/",
+            get(|request: Request| async {
+                let service = ServeFile::new("static/index.html");
+                let result = service.oneshot(request).await;
+                result
+            })
+            .post(process_upload),
+        )
         .route_service("/favicon.ico", ServeFile::new("static/favicon.ico"))
         .route_service("/favicon.svg", ServeFile::new("static/favicon.svg"))
         .route_service("/robots.txt", ServeFile::new("static/robots.txt"))
         .route_service("/status.json", get(get_status))
-        ;
+        .layer(DefaultBodyLimit::disable())
+        .layer(RequestBodyLimitLayer::new(10 * 1024 * 1024 /* 10mb */));
 
     // run our app with hyper, listening globally on port 3000
 
@@ -61,7 +66,6 @@ struct StatusInfo {
 }
 
 async fn get_status(Query(params): Query<StatusParams>) -> Response {
-
     let tech = format!("Rust {}", version());
     let timestamp = chrono::Utc::now().to_rfc3339();
     let lastmod = std::env::var("LASTMOD").unwrap_or_else(|_| "(local)".to_string());
@@ -77,8 +81,58 @@ async fn get_status(Query(params): Query<StatusParams>) -> Response {
     };
 
     if params.callback.is_some() {
-        let jsonp = format!("{}({})", params.callback.unwrap(), serde_json::to_string(&status).unwrap());
+        let jsonp = format!(
+            "{}({})",
+            params.callback.unwrap(),
+            serde_json::to_string(&status).unwrap()
+        );
         return jsonp.into_response();
     }
-    return Json(status).into_response()
+    return Json(status).into_response();
 }
+
+async fn process_upload(mut multipart: Multipart) -> Response {
+    while let Some(field) = multipart.next_field().await.unwrap() {
+        //let name = field.name().unwrap().to_string();
+        //let file_name = field.file_name().unwrap().to_string();
+        let content_type = field.content_type().unwrap().to_string();
+        let data = field.bytes().await.unwrap();
+
+        let response = Response::builder()
+            .header("Content-Type", "text/html")
+            .body(Body::from(process_bytes(content_type, data)))
+            //.body(Body::from_stream(process_bytes(data)))
+            .unwrap();
+        return response;
+
+        //return Body::from_stream(process_bytes(data));
+    }
+    return "No file uploaded".into_response();
+}
+
+fn process_bytes (content_type:String, data: Bytes) -> String {
+    let mut buf = String::with_capacity(20 * 1024);
+
+    buf.push_str(ABOVE);
+    buf.push_str(format!("Content-Type    : {}\n", content_type).as_str());
+    buf.push_str(format!("Upload size     : {} bytes\n", data.len()).as_str());
+    buf.push_str(format!("Image           : <img class=\"preview\" src=\"{}\" alt=\"original image\" />\n", make_data_url(content_type, data)).as_str());
+
+    buf.push_str(BELOW);
+
+    return buf;
+}
+
+fn make_data_url(content_type: String, data: Bytes) -> String {
+    let mut buf = String::with_capacity(20 * 1024);
+
+    buf.push_str("data:");
+    buf.push_str(content_type.as_str());
+    buf.push_str(";base64,");
+    buf.push_str(&BASE64.encode(data));
+
+    return buf;
+}
+
+const ABOVE: &str = "<html><head><style>img.preview {max-width:128px;max-height:128px;vertical-align:top;border:1px solid black;background-color:eee; }</style><title>Result</title></head><body><pre>";
+const BELOW: &str = "</pre></body></html>";
