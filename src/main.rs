@@ -1,8 +1,8 @@
 
-use axum::response::{IntoResponse, Response};
 use axum::{
     body::{Body, Bytes},
     extract::{DefaultBodyLimit, Multipart, Query, Request},
+    response::{IntoResponse, Response},
     routing::get,
     Json, Router,
 };
@@ -10,9 +10,7 @@ use base64::engine::Engine as _;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use librsvg_rebind::prelude::*;
 use rustc_version_runtime::version;
-
 use serde::{Deserialize, Serialize};
-
 use tower::util::ServiceExt;
 use tower_http::{limit::RequestBodyLimitLayer, services::ServeFile};
 
@@ -129,6 +127,20 @@ fn process_bytes (content_type:String, data: Bytes) -> String {
         buf.push_str(format!("Image           : <img class=\"preview\" src=\"{}\" alt=\"original image\" />\n", make_data_url("image/png".to_string(), &png)).as_str());
         pngs.push(png);
     }
+
+    buf.push_str(format!("Generating      : ICO file\n").as_str());
+    let mut icon_dir = ico::IconDir::new(ico::ResourceType::Icon);
+    for (_i, png) in pngs.iter().enumerate() {
+        let mut reader = std::io::Cursor::new(&png);
+        let image = ico::IconImage::read_png(&mut reader).unwrap();
+        icon_dir.add_entry(ico::IconDirEntry::encode(&image).unwrap());
+    }
+    let mut ico = Vec::new();
+    icon_dir.write(&mut ico).unwrap();
+    let ico_bytes = Bytes::from(ico);
+
+    buf.push_str(format!("Icon            : <img class=\"preview\" src=\"{}\" alt=\"original image\" />\n", make_data_url("image/ico".to_string(), &ico_bytes)).as_str());
+    buf.push_str(format!("                  <a href=\"{}\" download=\"favicon.ico\">Download</a>\n", make_data_url("image/ico".to_string(), &ico_bytes)).as_str());
 
     buf.push_str(BELOW);
 
