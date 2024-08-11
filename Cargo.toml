@@ -12,7 +12,6 @@ chrono = "0.4.38"
 futures = "0.3.30"
 hyper = { version = "0.14", features = ["full"] }
 ico = "0.3.0"
-librsvg = "2.58.2"
 librsvg-rebind = "0.1.0"
 rustc_version_runtime = "0.3.0"
 serde = { version = "1.0.206", features = ["derive"] }
