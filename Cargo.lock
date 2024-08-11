@@ -184,6 +184,7 @@ dependencies = [
  "hyper 0.14.30",
  "rustc_version_runtime",
  "serde",
+ "serde_json",
  "tokio",
  "tower",
  "tower-http",

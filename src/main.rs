@@ -1,14 +1,13 @@
 use axum::{
-    extract::Request,
+    extract::{Query, Request},
     Json,
-    routing::post,
     routing::get,
     Router,
 };
 use axum::response::{IntoResponse, Response};
 use rustc_version_runtime::version;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 
 use tower::util::ServiceExt;
@@ -45,6 +44,12 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct StatusParams {
+    callback: Option<String>,
+}
+
 #[derive(Serialize)]
 struct StatusInfo {
     success: bool,
@@ -55,7 +60,7 @@ struct StatusInfo {
     commit: String,
 }
 
-async fn get_status() -> Response {
+async fn get_status(Query(params): Query<StatusParams>) -> Response {
 
     let tech = format!("Rust {}", version());
     let timestamp = chrono::Utc::now().to_rfc3339();
@@ -70,5 +75,10 @@ async fn get_status() -> Response {
         lastmod: lastmod.to_string(),
         commit: commit.to_string(),
     };
-    Json(status).into_response()
+
+    if params.callback.is_some() {
+        let jsonp = format!("{}({})", params.callback.unwrap(), serde_json::to_string(&status).unwrap());
+        return jsonp.into_response();
+    }
+    return Json(status).into_response()
 }
