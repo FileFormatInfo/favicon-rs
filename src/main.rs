@@ -8,6 +8,7 @@ use axum::{
 };
 use base64::engine::Engine as _;
 use base64::engine::general_purpose::STANDARD as BASE64;
+use librsvg_rebind::prelude::*;
 use rustc_version_runtime::version;
 
 use serde::{Deserialize, Serialize};
@@ -110,20 +111,31 @@ async fn process_upload(mut multipart: Multipart) -> Response {
     return "No file uploaded".into_response();
 }
 
+
 fn process_bytes (content_type:String, data: Bytes) -> String {
     let mut buf = String::with_capacity(20 * 1024);
 
     buf.push_str(ABOVE);
     buf.push_str(format!("Content-Type    : {}\n", content_type).as_str());
     buf.push_str(format!("Upload size     : {} bytes\n", data.len()).as_str());
-    buf.push_str(format!("Image           : <img class=\"preview\" src=\"{}\" alt=\"original image\" />\n", make_data_url(content_type, data)).as_str());
+    buf.push_str(format!("Image           : <img class=\"preview\" src=\"{}\" alt=\"original image\" />\n", make_data_url(content_type, &data)).as_str());
+
+    let sizes: [i32; 4] = [16, 32, 64, 128];
+    let mut pngs: Vec<Bytes> = vec![];
+
+    for (_i, size) in sizes.iter().enumerate() {
+        let png = render_png(size, &data);
+        buf.push_str(format!("Generating      : {}x{} image\n", size, size).as_str());
+        buf.push_str(format!("Image           : <img class=\"preview\" src=\"{}\" alt=\"original image\" />\n", make_data_url("image/png".to_string(), &png)).as_str());
+        pngs.push(png);
+    }
 
     buf.push_str(BELOW);
 
     return buf;
 }
 
-fn make_data_url(content_type: String, data: Bytes) -> String {
+fn make_data_url(content_type: String, data: &Bytes) -> String {
     let mut buf = String::with_capacity(20 * 1024);
 
     buf.push_str("data:");
@@ -136,3 +148,25 @@ fn make_data_url(content_type: String, data: Bytes) -> String {
 
 const ABOVE: &str = "<html><head><style>img.preview {max-width:128px;max-height:128px;vertical-align:top;border:1px solid black;background-color:eee; }</style><title>Result</title></head><body><pre>";
 const BELOW: &str = "</pre></body></html>";
+
+fn render_png(imgsize:&i32, data:&Bytes) -> Bytes {
+
+    let handle = librsvg_rebind::Handle::from_data(&data)
+        .unwrap()
+        .unwrap();
+
+    let surface =
+        cairo::ImageSurface::create(cairo::Format::ARgb32, *imgsize as i32, *imgsize as i32).unwrap();
+    let context = cairo::Context::new(&surface).unwrap();
+
+    let viewport = librsvg_rebind::Rectangle::new(0., 0., *imgsize as f64, *imgsize as f64);
+
+    handle.render_document(&context, &viewport).unwrap();
+
+    let mut output_file = Vec::new();
+
+    //let mut output_file = std::fs::File::create("/dev/null").unwrap();
+    surface.write_to_png(&mut output_file).unwrap();
+
+    return Bytes::from(output_file);
+}
