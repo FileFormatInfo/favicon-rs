@@ -1,0 +1,7 @@
+#
+# robots.txt for favicon-rs
+#
+
+User-agent: *
+Disallow: /honeypot.txt
+Allow: /

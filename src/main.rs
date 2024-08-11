@@ -1,12 +1,28 @@
 use axum::{
+    extract::Request,
+    routing::post,
     routing::get,
     Router,
+};
+
+use tower::util::ServiceExt;
+use tower_http::{
+    services::{ServeFile},
 };
 
 #[tokio::main]
 async fn main() {
     // build our application with a single route
-    let app = Router::new().route("/", get(|| async { "Hello, World!" }));
+    let app = Router::new()
+        .route_service("/", get(|request: Request| async {
+            let service = ServeFile::new("static/index.html");
+            let result = service.oneshot(request).await;
+            result
+        }).post(|| async { "Hello, World!!" }))
+        .route_service("/favicon.ico", ServeFile::new("static/favicon.ico"))
+        .route_service("/favicon.svg", ServeFile::new("static/favicon.svg"))
+        .route_service("/robots.txt", ServeFile::new("static/robots.txt"))
+        ;
 
     // run our app with hyper, listening globally on port 3000
 
