@@ -1,0 +1,11 @@
+Dockerfile
+.dockerignore
+*.env
+.git
+.github
+.gitignore
+*.md
+*.sh
+target
+tmp
+*.tmp
