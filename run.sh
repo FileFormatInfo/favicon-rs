@@ -13,6 +13,13 @@ if [ -f "${ENV_FILE}" ]; then
     export $(cat "${ENV_FILE}")
 fi
 
+export LASTMOD=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+if [[ $(git status --short) != '' ]]; then
+  export COMMIT="$(git rev-parse --short HEAD) (dirty)"
+else
+  export COMMIT="$(git rev-parse --short HEAD)"
+fi
+
 
 # run the app
-cargo watch -x run
+cargo watch --clear --exec run
