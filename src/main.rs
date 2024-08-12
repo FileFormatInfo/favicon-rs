@@ -142,6 +142,9 @@ fn process_bytes (content_type:String, data: Bytes) -> String {
     buf.push_str(format!("Icon            : <img class=\"preview\" src=\"{}\" alt=\"original image\" />\n", make_data_url("image/ico".to_string(), &ico_bytes)).as_str());
     buf.push_str(format!("                  <a href=\"{}\" download=\"favicon.ico\">Download</a>\n", make_data_url("image/ico".to_string(), &ico_bytes)).as_str());
 
+    buf.push_str("Complete!\n");
+    buf.push_str("<a href=\"/\">Make another</a>");
+
     buf.push_str(BELOW);
 
     return buf;

@@ -1,5 +1,19 @@
 # SVG to ICO Favicon Generator [<img alt="Logo for favicon-rs" src="static/favicon.svg" height="96" align="right"/>](https://favicon.fileformat.info/)
 
+[![deploy](https://github.com/FileFormatInfo/favicon-rs/actions/workflows/gcr-deploy.yaml/badge.svg)](https://github.com/FileFormatInfo/favicon-rs/actions/workflows/gcr-deploy.yaml)
+
+A website to make favicons from SVGs or PNGs/JPEGs.
+
+## Using
+
+Go to [favicon.fileformat.info](https://favicon.fileformat.info/) and upload an `.svg` file!
+
+## Running
+
+If you have rust installed, you should be able to run `./run.sh`.
+
+If you have docker installed, you should be able to run `./docker-run.sh`.
+
 ## License
 
 [GNU Affero General Public License v3.0](LICENSE.txt)
