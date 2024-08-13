@@ -87,30 +87,76 @@ async fn get_status(Query(params): Query<StatusParams>) -> Response {
         );
         return jsonp.into_response();
     }
-    return Json(status).into_response();
+    let mut res = Json(status).into_response();
+    res.headers_mut().insert("Access-Control-Allow-Origin", "*".parse().unwrap());
+    res.headers_mut().insert("Access-Control-Allow-Methods", "GET".parse().unwrap());
+    res.headers_mut().insert("Access-Control-Max-Age", "604800".parse().unwrap());
+    return res;
 }
 
-async fn process_upload(mut multipart: Multipart) -> Response {
+fn show_form(err_msg: String) -> Response<Body> {
+    //read static/index.html into memory and replace $tag with err_msg
+    let buf = std::fs::read("static/index.html").unwrap();
+    let mut html = String::from_utf8(buf).unwrap();
+    if err_msg.len() > 0 {
+        let html_err_msg = format!("<div class=\"alert alert-danger\" role=\"alert\">{}</div>", err_msg);
+        html = html.replace("<!-- alert -->", &html_err_msg);
+    }
+    return Response::builder()
+        .header("Content-Type", "text/html")
+        .body(Body::from(html))
+        .unwrap();
+}
+
+async fn process_upload(mut multipart: Multipart) -> Response<Body> {
     while let Some(field) = multipart.next_field().await.unwrap() {
         //let name = field.name().unwrap().to_string();
         //let file_name = field.file_name().unwrap().to_string();
         let content_type = field.content_type().unwrap().to_string();
         let data = field.bytes().await.unwrap();
 
-        let response = Response::builder()
-            .header("Content-Type", "text/html")
-            .body(Body::from(process_bytes(content_type, data)))
-            //.body(Body::from_stream(process_bytes(data)))
-            .unwrap();
-        return response;
+        return process_form(content_type, data);
 
         //return Body::from_stream(process_bytes(data));
     }
-    return "No file uploaded".into_response();
+    return show_form("Invalid post (no <code>file</code> field)".to_string());
 }
 
+fn process_form(content_type: String, data: Bytes) -> Response<Body> {
 
-fn process_bytes (content_type:String, data: Bytes) -> String {
+    if data.len() == 0 {
+        return show_form("You need to upload a file (file missing or empty)".to_string());
+    }
+
+    if !is_svg(&data) {
+        return show_form("This file does not look like an SVG file".to_string());
+    }
+
+    let body = process_bytes(content_type, data);
+    if body.is_err() {
+        //LATER: show_form with error text
+        return show_form("".to_string())
+    }
+
+    let response = Response::builder()
+        .header("Content-Type", "text/html")
+        .body(Body::from(body.unwrap()))
+        .unwrap();
+
+    return response;
+}
+
+fn is_svg(data: &Bytes) -> bool {
+    let text = std::str::from_utf8(data);
+    if text.is_err() {
+        return false;
+    }
+    let text = text.unwrap();
+    return text.contains("<svg") && text.contains("</svg>");
+}
+
+//LATER: stream response so we don't need to have a huge buffer
+fn process_bytes (content_type:String, data: Bytes) -> Result<String, Box<dyn std::error::Error>> {
     let mut buf = String::with_capacity(20 * 1024);
 
     buf.push_str(ABOVE);
@@ -140,14 +186,13 @@ fn process_bytes (content_type:String, data: Bytes) -> String {
     let ico_bytes = Bytes::from(ico);
 
     buf.push_str(format!("Icon            : <img class=\"preview\" src=\"{}\" alt=\"original image\" />\n", make_data_url("image/ico".to_string(), &ico_bytes)).as_str());
-    buf.push_str(format!("                  <a href=\"{}\" download=\"favicon.ico\">Download</a>\n", make_data_url("image/ico".to_string(), &ico_bytes)).as_str());
-
     buf.push_str("Complete!\n");
-    buf.push_str("<a href=\"/\">Make another</a>");
+    buf.push_str(format!("                  <a class=\"btn btn-primary\" href=\"{}\" download=\"favicon.ico\">Download</a>\n", make_data_url("image/ico".to_string(), &ico_bytes)).as_str());
+
 
     buf.push_str(BELOW);
 
-    return buf;
+    return Ok(buf);
 }
 
 fn make_data_url(content_type: String, data: &Bytes) -> String {
@@ -161,9 +206,10 @@ fn make_data_url(content_type: String, data: &Bytes) -> String {
     return buf;
 }
 
-const ABOVE: &str = "<html><head><style>img.preview {max-width:128px;max-height:128px;vertical-align:top;border:1px solid black;background-color:eee; }</style><title>Result</title></head><body><pre>";
-const BELOW: &str = "</pre></body></html>";
+const ABOVE: &str = "<html><head><link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\" rel=\"stylesheet\" integrity=\"sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH\" crossorigin=\"anonymous\" /><style>img.preview {max-width:128px;max-height:128px;vertical-align:top;border:1px solid black;background-color:eee; }</style><title>Result</title></head><body><div class=\"container\"><pre>";
+const BELOW: &str = "</pre><p><a class=\"btn btn-outline-primary\" href=\"/\">Make another</a></p></div></body></html>";
 
+//LATER: catch/return errors
 fn render_png(imgsize:&i32, data:&Bytes) -> Bytes {
 
     let handle = librsvg_rebind::Handle::from_data(&data)

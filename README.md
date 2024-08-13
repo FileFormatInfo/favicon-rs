@@ -27,3 +27,4 @@ If you have docker installed, you should be able to run `./docker-run.sh`.
 [![Google CloudRun](https://www.vectorlogo.zone/logos/google_cloud_run/google_cloud_run-ar21.svg)](https://cloud.google.com/run/ "Hosting")
 [![NodePing](https://www.vectorlogo.zone/logos/nodeping/nodeping-ar21.svg)](https://nodeping.com?rid=201109281250J5K3P "Uptime monitoring")
 [![Rust](https://www.vectorlogo.zone/logos/rust-lang/rust-lang-ar21.svg)](https://www.rust-lang.org/?utm_source=vectorlogozone&utm_medium=referrer "Programming language")
+
