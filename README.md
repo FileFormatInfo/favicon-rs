@@ -1,6 +1,7 @@
 # SVG to ICO Favicon Generator [<img alt="Logo for favicon-rs" src="static/favicon.svg" height="96" align="right"/>](https://favicon.fileformat.info/)
 
 [![deploy](https://github.com/FileFormatInfo/favicon-rs/actions/workflows/gcr-deploy.yaml/badge.svg)](https://github.com/FileFormatInfo/favicon-rs/actions/workflows/gcr-deploy.yaml)
+![NodePing status](https://img.shields.io/nodeping/status/q9lw86hq-xgwb-40h3-8pqc-1ezfqcshnttq)
 
 A website to make favicons from SVGs or PNGs/JPEGs.
 
@@ -28,3 +29,9 @@ If you have docker installed, you should be able to run `./docker-run.sh`.
 [![NodePing](https://www.vectorlogo.zone/logos/nodeping/nodeping-ar21.svg)](https://nodeping.com?rid=201109281250J5K3P "Uptime monitoring")
 [![Rust](https://www.vectorlogo.zone/logos/rust-lang/rust-lang-ar21.svg)](https://www.rust-lang.org/?utm_source=vectorlogozone&utm_medium=referrer "Programming language")
 
+## Future 
+
+- [ ] generate from a URL
+- [ ] demo mode: pick a random icon
+- [ ] CLI that takes a filename or URL
+- [ ] bundle all assets into binary: [include_dir](https://crates.io/crates/include_dir)
