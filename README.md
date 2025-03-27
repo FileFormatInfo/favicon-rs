@@ -3,7 +3,7 @@
 [![deploy](https://github.com/FileFormatInfo/favicon-rs/actions/workflows/gcr-deploy.yaml/badge.svg)](https://github.com/FileFormatInfo/favicon-rs/actions/workflows/gcr-deploy.yaml)
 ![NodePing status](https://img.shields.io/nodeping/status/q9lw86hq-xgwb-40h3-8pqc-1ezfqcshnttq)
 
-A website to make favicons from SVGs or PNGs/JPEGs.
+A website to make favicons from SVGs.
 
 ## Using
 
@@ -24,6 +24,7 @@ If you have docker installed, you should be able to run `./docker-run.sh`.
 [![Bootstrap](https://www.vectorlogo.zone/logos/getbootstrap/getbootstrap-ar21.svg)](https://getbootstrap.com/ "HTML/CSS Framework")
 [![Git](https://www.vectorlogo.zone/logos/git-scm/git-scm-ar21.svg)](https://git-scm.com/ "Version control")
 [![Github](https://www.vectorlogo.zone/logos/github/github-ar21.svg)](https://github.com/ "Code hosting")
+[![jsDelivr](https://www.vectorlogo.zone/logos/jsdelivr/jsdelivr-ar21.svg)](https://www.jsdelivr.com/ "CDN")
 [![LibRsvg](https://www.vectorlogo.zone/logos/gnome/gnome-ar21.svg)](https://gitlab.gnome.org/GNOME/librsvg "SVG processing library")
 [![Google CloudRun](https://www.vectorlogo.zone/logos/google_cloud_run/google_cloud_run-ar21.svg)](https://cloud.google.com/run/ "Hosting")
 [![NodePing](https://www.vectorlogo.zone/logos/nodeping/nodeping-ar21.svg)](https://nodeping.com?rid=201109281250J5K3P "Uptime monitoring")
