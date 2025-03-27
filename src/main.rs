@@ -16,6 +16,11 @@ use tower_http::{limit::RequestBodyLimitLayer, services::ServeFile};
 
 #[tokio::main]
 async fn main() {
+    
+    ctrlc::set_handler(move || {
+        std::process::exit(0);
+    }).expect("Error setting Ctrl-C handler");
+
     // build our application with a single route
     let app = Router::new()
         .route_service(
